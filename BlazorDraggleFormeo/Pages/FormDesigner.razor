@@ -1,0 +1,95 @@
+﻿@page "/formdesigner/{templateId?}"
+@inject IJSRuntime JSRuntime;   
+@inject IFormDesignerHttpRepository _formDesingerHttpRepository
+@inject NavigationManager NavigationManager
+
+
+<style>
+    .save-form {
+        display: none !important;
+    }
+    .clear-form {
+        display: none !important;
+    }
+</style>
+
+<h3>Form Designer</h3>
+<hr/>
+<div class="container">
+    <div class="form-group row">  
+        <label for="TemplateName" class="control-label col">Template Name</label>  
+        <input for="TemplateName" id="TemplateName" class="form-control col-10" @bind="templateName" @bind:event="oninput"/>  
+    </div>
+</div>
+
+<div class="formeo-wrap" id="fb-editor"></div>
+
+<div class="row">
+    <div class="text-right form-group col-12">
+        <button class="btn btn-primary" @onclick="SaveTemplate">Save</button>
+        <button class="btn btn-danger" @onclick="ClearTemplate">Clear</button>
+    </div>
+</div>
+
+@*
+const renderer = new FormeoRenderer(options)
+renderer.render(formData)*@
+@code {
+    [Parameter]  
+    public string templateId { get; set; }
+    private string templateName = "";
+    FormTemplatesViewModel templateData = new FormTemplatesViewModel();
+     
+    protected override async Task<Task> OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (Convert.ToInt32(templateId)>0)
+            {
+                templateData = await _formDesingerHttpRepository.GetFormTemplateById(Convert.ToInt32(templateId));
+                templateName =templateData.TemplateName ;
+            }
+           return JSRuntime.InvokeVoidAsync("formDesigner.init", (templateData.TemplateData ?? ""), templateName).AsTask();
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveTemplate()
+    {
+        if (string.IsNullOrWhiteSpace(templateName))
+        {
+            await JSRuntime.InvokeVoidAsync("alert.errorAlert", "Please fill template name");
+            return;
+        }
+        var data =  await JSRuntime.InvokeAsync<string>("formDesigner.getFormTemplateData");
+        if(data == "")
+        {
+            await JSRuntime.InvokeVoidAsync("alert.errorAlert", "Please create template");
+            return;
+        }
+        Console.WriteLine(data);
+        templateData = new FormTemplatesViewModel
+        {
+            CreatedDate = DateTime.Now,
+            TemplateData=data,
+            TemplateName = templateName,
+            TemplateId = templateData.TemplateId
+        };
+        var save = await _formDesingerHttpRepository.UpsertFormTemplate(templateData);
+        await JSRuntime.InvokeVoidAsync("alert.successAlert", save);
+        NavigationManager.NavigateTo("templates");
+    }
+    private async Task ClearTemplate()
+    {
+        var data=  await JSRuntime.InvokeAsync<bool>("formDesigner.clearForm");
+        if (data)
+        {
+            templateData.TemplateName = "";
+            templateName = "";
+        }
+    }
+    private void RenderFormData()
+    {
+         JSRuntime.InvokeVoidAsync("formDesigner.renderForm");
+    }
+}

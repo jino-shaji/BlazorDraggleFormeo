@@ -1,0 +1,68 @@
+﻿@page "/runform/{templateId}"
+
+@inject IJSRuntime JSRuntime;   
+@inject IFormDesignerHttpRepository _formDesingerHttpRepository
+@inject NavigationManager NavigationManager
+
+<h3>Fill Form- @templateData.TemplateName</h3>
+<hr/>
+
+
+
+
+<div class="form-group row">  
+    <label for="TemplateName" class="control-label col">Template Name <b>@templateData.TemplateName</b> </label>  
+</div>
+
+
+<div class="container p-5 form-design-container">
+    <div class="form-group row">  
+        <label for="FormName" class="control-label col"><b>Name</b></label>  
+        <input for="FormName" id="FormName" class="form-control col-10" @bind="formName" @bind:event="oninput"/>  
+    </div>
+    <hr />
+    <form class="formeo-wrap" id="formeo-wrap-render"></form>
+    <button class="btn btn-primary" @onclick="SaveForm">Save</button>
+</div>
+
+@code {
+    [Parameter]  
+    public string templateId { get; set; } = "0";
+    public string formName { get; set; } = "";
+    
+    private FormTemplatesViewModel templateData = new FormTemplatesViewModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        templateData = await _formDesingerHttpRepository.GetFormTemplateById(Convert.ToInt32(templateId));
+        if (templateData != null)
+            await JSRuntime.InvokeVoidAsync("formDesigner.renderForm", templateData.TemplateData);
+    }
+
+    private async Task SaveForm()
+    {
+        var validForm =  await JSRuntime.InvokeAsync<bool>("formDesigner.validForm");
+        if (!validForm)
+        {
+            await JSRuntime.InvokeVoidAsync("alert.errorAlert", "Please fill all fields");
+            return;
+        }
+        if (String.IsNullOrWhiteSpace(formName))
+        {
+            await JSRuntime.InvokeVoidAsync("alert.errorAlert", "Please fill all fields");
+            return;
+        }
+        var data =  await JSRuntime.InvokeAsync<string>("formDesigner.getData");
+        Console.WriteLine(data);
+        var formData = new FormDataViewModel
+        {
+            FormData = data,
+            TemplateId = templateData.TemplateId,
+            FormName = formName
+        };
+        var save = await _formDesingerHttpRepository.AddFormTemplateData(formData);
+        await JSRuntime.InvokeVoidAsync("alert.successAlert", save);
+
+        NavigationManager.NavigateTo("forms");
+    }
+}

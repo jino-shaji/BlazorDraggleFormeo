@@ -1,0 +1,54 @@
+﻿@page "/forms"
+@inject IJSRuntime JSRuntime;   
+@inject HttpClient Http
+@inject IFormDesignerHttpRepository _formDesingerHttpRepository
+@inject NavigationManager NavigationManager
+
+<h1>Form Data</h1>
+
+@if (templates == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var form in templates)
+            {
+                <tr>
+                    <td>@form.FormName</td>
+                    <td>@form.TemplateName</td>
+                    <td>@form.FilledDate.ToShortDateString()</td>
+                    <td>
+                        <div class="form-group">
+                            <button @onclick="() => ViewFormData(form.FormId)" class="btn btn-primary">Open</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<FormDataTemplateViewModel> templates;
+
+    protected override async Task OnInitializedAsync()
+    {
+        templates = await _formDesingerHttpRepository.GetAllFormTemplateData();
+    }
+     
+    private void ViewFormData(int FormId)
+    {
+        NavigationManager.NavigateTo($"viewForm/{FormId}");
+    }
+}

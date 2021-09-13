@@ -1,0 +1,69 @@
+﻿@page "/templates"
+@inject IJSRuntime JSRuntime;   
+@inject HttpClient Http
+@inject IFormDesignerHttpRepository _formDesingerHttpRepository
+@inject NavigationManager NavigationManager
+
+<h1>Templates</h1>
+
+@if (templates == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Created Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in templates)
+            {
+                <tr>
+                    <td>@forecast.TemplateName</td>
+                    <td>@forecast.CreatedDate.ToShortDateString()</td>
+                    <td>
+                        <div class="form-group">
+                            <button @onclick="() => RunTemplate(forecast.TemplateId)" class="btn btn-primary">Run</button>
+                            <button @onclick="() => EditTemplate(forecast.TemplateId)" class="btn btn-warning">Edit</button>
+                            <button @onclick="() => DeleteTemplate(forecast.TemplateId)" class="btn btn-danger">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<FormTemplatesViewModel> templates;
+
+    protected override async Task OnInitializedAsync()
+    {
+        templates = await _formDesingerHttpRepository.GetAllFormTemplates();
+    }
+    private void RunTemplate(int TemplateId)
+    {
+        NavigationManager.NavigateTo($"runform/{TemplateId}");
+    }
+
+    private void EditTemplate(int TemplateId)
+    {
+        NavigationManager.NavigateTo($"formdesigner/{TemplateId}");
+    }
+
+    private async Task DeleteTemplate(int TemplateId)
+    {
+        var data=  await JSRuntime.InvokeAsync<bool>("alert.confirm", "Are you sure to delete this template?");
+        if (data)
+        {
+            var res = await _formDesingerHttpRepository.DeleteFormTemplate(TemplateId);
+            await JSRuntime.InvokeVoidAsync("alert.successAlert", res);
+            templates = await _formDesingerHttpRepository.GetAllFormTemplates();
+        }
+    }
+}
