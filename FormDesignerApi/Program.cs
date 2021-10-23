@@ -24,7 +24,7 @@ namespace FormDesignerApi
                Console.WriteLine("Running DB Migration");
 
                 var applicationDbContext = services.GetRequiredService<ApplicationDbContext>();
-                applicationDbContext.Database.Migrate();
+            //    applicationDbContext.Database.Migrate();
                 Console.WriteLine("Finished Migrating Application DB");
             }
             host.Run();

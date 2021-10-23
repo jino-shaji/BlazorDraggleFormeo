@@ -90,30 +90,47 @@ window.formDesigner = {
     },
     renderForm: function (formData) {
         //var formData = window.localStorage.getItem('formdata');
-        console.log('formData', formData);
+        console.log('formData new', formData);
         if (formData) {
             renderer = new FormeoRenderer(optionsRender)
             renderer.render(JSON.parse(formData));
         }
     },
     fillFormData: function (userData) {
+        console.log('userData', userData);
         $.each(JSON.parse(userData), function (id, value) {
-            $('#'+ id).val(value);
-            $('#' + id).trigger('change');
-            $('#' + id).attr('readonly', true);
+            console.log('checkbox', value, id);
+            if ($('#' + id).attr('type') == 'checkbox') {
+                $('#' + id).prop('checked', true);
+                $('#' + id).attr('readonly', true);
+                $('#' + id).attr('disabled', true);
+                $('#' + id).trigger('change');
+            } else {
+                $('#' + id).val(value);
+                $('#' + id).trigger('change');
+                $('#' + id).attr('readonly', true);
+                $('#' + id).attr('disabled', true);
+            }
         });
     },
     getData: function () {
-        var data = $(optionsRender.renderContainer).serializeObject();
+        var data = $(optionsRender.renderContainer).serializeArray();
         var values = {};
-        $.each($(optionsRender.renderContainer).serializeArray(), function (i, field) {
-            values[field.name] = field.value;
+        console.log('data', data);
+        $.each(data, function (i, field) {
+            if ($('[name=' + field.name + ']').length > 1) {
+                values[$('[name=' + field.name + '][value =' + field.value + ']').attr('id')] = field.value;
+            } else {
+                values[$('[name=' + field.name + ']').attr('id')] = field.value;
+            }
         });
         return JSON.stringify(values);
     },
     validForm: function (formName) {
         var isValid = true;
         $.each($(optionsRender.renderContainer).serializeArray(), function (i, field) {
+            console.log('field', field);
+          //  $('#' + field.id).attr('required')
             if (field.value == '') {
                 isValid = false;
                 return isValid;

@@ -2,6 +2,8 @@
   "author": "",
   "description": "",
   "devDependencies": {
+    "@babel/core": "^7.15.8",
+    "babel-loader": "^8.2.3",
     "webpack": "^5.51.1",
     "webpack-cli": "^4.8.0"
   },
